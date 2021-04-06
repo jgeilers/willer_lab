@@ -91,8 +91,8 @@ def get_tweets(account_list, auth_api):
 def main():
 
 	# Authenticate to Twitter
-	auth = tweepy.OAuthHandler("ykhXYXaehvutBn9KrDJl8yoUy", "h07UCbLAnN1wjll339Sg16gCtlpWmfwitC1njJSn8cED7IbACQ")
-	auth.set_access_token("556463747-o4O8x8ZxxxbLsyoX7M9p9HZfjBOfWnLiNEtRYNZn","qT2ZfL573eoB8MBegrVrkyjaH4K6WddjKPk8cfo64arTw")
+	auth = tweepy.OAuthHandler() #keys in here
+	auth.set_access_token()  #keys in here
 	auth_api = tweepy.API(auth)
 	
 	# test authentication
@@ -122,23 +122,6 @@ def main():
 	with open(twitter_handle_list[0], newline = '', mode='w') as file:
 		for item in final_list:
 			file.write(item + "\n")
-
-	#clean dict
-	# delete = []
-	# for item in tweet_dict:
-	# 	if len(tweet_dict[item]) == 0:
-	# 		delete.append(item)
-	# for item in delete:
-	# 	del tweet_dict[item]	
-
-	#write to csv
-	# with open('covid_tweets.csv', newline = '', mode='w', encoding='utf-8') as csv_file:
-	# 	fieldnames = ["Twitter Handle","text","picture","video","quote handle","quote text","quote picture","quote video"]
-	# 	writer = csv.writer(csv_file, delimiter=',', quotechar='"')#, quoting=csv.QUOTE_MINIMAL)#, encoding='utf-8')
-	# 	writer.writerow(fieldnames)
-	# 	for item in tweet_dict:
-	# 		for elem in tweet_dict[item]:
-	# 			writer.writerow([item, elem[0], elem[1], elem[2], elem[3], elem[4], elem[5], elem[6]])
 
 
 if __name__ == "__main__":

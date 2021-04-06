@@ -1,0 +1,193 @@
+---
+title: "twitter_politics"
+author: "Jackson Eilers"
+date: "8/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ROAuth)
+library(devtools)
+# library(tweetscores)
+source("../twitter_ideology/pkg/tweetscores/R/get-friends.R")
+source("../twitter_ideology/pkg/tweetscores/R/oauth-utils.R")
+source("../twitter_ideology/pkg/tweetscores/R/utils.R")
+source("../twitter_ideology/pkg/tweetscores/R/supplementary.R")
+source("../twitter_ideology/pkg/tweetscores/R/get-users-batch.R")
+```
+
+```{r}
+requestURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
+# consumerKey <- "ykhXYXaehvutBn9KrDJl8yoUy"
+# consumerSecret <- "h07UCbLAnN1wjll339Sg16gCtlpWmfwitC1njJSn8cED7IbACQ"
+consumerKey <- "G5zpdJOs93oDc896Yx2OUnUto"
+consumerSecret <- "4XA9v2GaMv1mgguO8UsPnqnoYX8Re255LLmCeRNwXay7blQ49g"
+my_oauth <- OAuthFactory$new(consumerKey=consumerKey, consumerSecret=consumerSecret,
+    requestURL=requestURL, accessURL=accessURL, authURL=authURL)
+```
+
+```{r}
+my_oauth$handshake(cainfo = system.file("CurlSSL", "cacert.pem", package = "RCurl"))
+wd_path = "~/Documents/Stanford/Willer Research/conservative/twitter_politics/credentials"
+setwd(wd_path)
+save(my_oauth, file="my_oauth")
+```
+
+```{r}
+# personalized function from the github to keep it from stopping 
+estimate_Ideology <- function(user, friends, verbose=TRUE, method="MCMC",
+                              iters=5000, n.warmup=1000, thin=20, ...){
+  if(missing(friends))
+    friends <- getFriends(user)
+  # getting row of adjacency matrix
+  y <- tweetscores::posterior_samples$id %in% friends
+  # info message
+  if (sum(y)==0){
+    temp = rep(0, 18)
+    return(temp)
+  }
+  message(user, " follows ", sum(y), " elites: ",
+      paste(tweetscores::posterior_samples$screen_name[
+          tweetscores::posterior_samples$id %in% friends ], collapse=", "))
+  # estimation
+  if (method=="MCMC"){
+    results <- metropolis.logit(y, iters=iters, n.warmup=n.warmup,
+                                thin=thin, verbose=verbose, ...)
+  }
+  if (method=="MLE"){
+    results <- ml.logit(y, iters=iters, n.warmup=n.warmup,
+                                thin=thin, verbose=verbose, ...)
+  }
+  results$user <- user
+  attr(results, "class") <- "twideology"
+  return(results)
+}
+```
+
+```{r}
+# personalized function from the github to keep it from stopping 
+estimate_Ideology2 <- function(user, friends, verbose=TRUE, exact=FALSE, 
+  replace_outliers=FALSE){
+  # if(missing(friends))
+  #   friends <- getFriends(user)
+  # getting row of adjacency matrix
+  y <- matrix((tweetscores::refdataCA$id %in% friends)*1, nrow=1)
+  # info message
+  if (sum(y)==0){
+    cat(user, " follows ", sum(y), " elites")
+    temp = 0
+    return(temp)
+  }
+  message(user, " follows ", sum(y), " elites: ",
+      paste(tweetscores::refdataCA$colname[
+        tweetscores::refdataCA$id %in% friends], collapse=", "))
+  # estimation
+  values <- supplementaryRows(tweetscores::refdataCA, y)
+  # normalizing
+  theta <- tweetscores::refdataCA$qs$theta[which.min(abs(values[1] - (tweetscores::refdataCA$qs$value)))]
+  # adding random noise
+  # see https://github.com/pablobarbera/echo_chambers/blob/master/02_estimation/11-second-stage.r
+  if (!exact) theta <- theta + rnorm(1, 0, 0.05)
+  # replacing outliers
+  if (replace_outliers && (theta == -Inf || theta == Inf)){
+    # sample 10000 values from normal
+    if (!exact) set.seed(123)
+    rs <- rnorm(n=10000)
+    # keep those below or above threshold
+    if (theta == -Inf){ theta <- rs[rs<tweetscores::refdataCA$qs$theta[2]][1] }
+    if (theta == Inf){ theta <- rs[rs>tweetscores::refdataCA$qs$theta[100]][1] }
+  }
+
+  return(theta)
+}
+```
+
+```{r}
+handle=c(); ideology2=c()
+for (user in twitter_influencers$account_handle) {
+  friends <- getFriends(screen_name=user, oauth=wd_path)
+  # results1 <- estimate_Ideology(user, friends, method="MLE")
+  results2 <- estimate_Ideology2(user, friends)
+  
+  handle=c(handle,user) 
+  # beta_mean=c(beta_mean, results1[1][1]); beta_sd=c(beta_sd, results1[2][1]); beta_2.5=c(beta_2.5, results1[3][1]); beta_25=c(beta_25, results1[4][1]); beta_50=c(beta_50, results1[5][1]); beta_75=c(beta_75, results1[6][1]); beta_97.5=c(beta_97.5, results1[7][1]); beta_Rhat=c(beta_Rhat, results1[8][1]); beta_n.eff=c(beta_n.eff, results1[9][1]); theta_mean=c(theta_mean, results1[10][1]); theta_sd=c(theta_sd, results1[11][1]); theta_2.5=c(theta_2.5, results1[12][1]); theta_25=c(theta_25, results1[13][1]); theta_50=c(theta_50, results1[14][1]); theta_75=c(theta_75, results1[15][1]); theta_97.5=c(theta_97.5, results1[16][1]); theta_Rhat=c(theta_Rhat, results1[17][1]); theta_n.eff=c(theta_n.eff, results1[18][1]); 
+  ideology2=c(ideology2, results2)
+}
+```
+
+```{r}
+df = data.frame(handle=handle, ideology2=ideology2)
+                # beta_mean=beta_mean, beta_sd=beta_sd, beta_2.5=beta_2.5, beta_25=beta_25, beta_50=beta_50, beta_75=beta_75, beta_97.5=beta_97.5, beta_Rhat=beta_Rhat, beta_n.eff=beta_n.eff, theta_mean=theta_mean, theta_sd=theta_sd, theta_2.5=theta_2.5, theta_25=theta_25, theta_50=theta_50, theta_75=theta_75, theta_97.5=theta_97.5, theta_Rhat=theta_Rhat, theta_n.eff=theta_n.eff, 
+```
+
+```{r}
+write.csv(df,"~/Documents/Stanford/Willer Research/conservative/twitter_politics/political_leanings.csv", row.names = FALSE)
+```
+
+
+
+## Single User
+
+```{r one user}
+user <- "jgeilers"
+friends <- getFriends(screen_name=user, oauth=wd_path)
+results <- estimateIdeology(user, friends)
+```
+
+```{r}
+summary(results)
+
+# assessing chain convergence using a trace plot
+tracePlot(results, "beta")
+tracePlot(results, "theta")
+
+# comparing with other ideology estimates
+plot(results)
+```
+
+```{r}
+# faster estimation using maximum likelihood
+results <- estimateIdeology(user, friends, method="MLE")
+# plot(results)
+summary(results)
+```
+
+```{r}
+# estimation using correspondence analysis
+results <- estimateIdeology2(user, friends)
+results
+```
+
+## Many users
+
+```{r many users}
+# twitter_handle_list = c()
+# for(item in twitter_influencers$account_handle) {
+#   temp <- twitter_handle_list
+#   twitter_handle_list <- c(temp, item)
+# }
+#userdata <- getUsersBatch(screen_names=twitter_handle_list,oauth=my_oauth)
+```
+
+```{r}
+handle=c(); ideology2=c()
+# beta_mean=c(); beta_sd=c(); beta_2.5=c(); beta_25=c(); beta_50=c(); beta_75=c(); beta_97.5=c(); beta_Rhat=c(); beta_n.eff=c(); theta_mean=c(); theta_sd=c(); theta_2.5=c(); theta_25=c(); theta_50=c(); theta_75=c(); theta_97.5=c(); theta_Rhat=c(); theta_n.eff=c(); 
+```
+
+
+```{r other functions}
+# scrapeCongressData: is a scraper of the list of Twitter accounts for Members of the US congress from the unitedstates Github account.
+
+# getUsersBatch: scrapes user information for more than 100 Twitter users from Twitter’s REST API.
+
+# getFollower: scrapes followers lists from Twitter’ REST API.
+
+# CA: is a modified version of the ca function in the ca package (available on CRAN) that computes simple correspondence analysis with a much lower memory usage.
+
+# supplementaryColumns / supplementaryRows: takes additional columns of a follower matrix and projects them to the latent ideological space using the parameters of an already-fitted correspondence analysis model.
+
+# getCreated: returns the approximate date in which a Twitter account was created based on its Twitter ID. In combination with estimatePastFollowers and estimateDateBreaks, it can be used to infer past Twitter follower networks.
+```
+

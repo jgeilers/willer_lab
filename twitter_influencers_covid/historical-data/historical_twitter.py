@@ -86,8 +86,8 @@ def get_tweets(account_list, auth_api):
 def main():
 
 	# Authenticate to Twitter
-	auth = tweepy.OAuthHandler("ykhXYXaehvutBn9KrDJl8yoUy", "h07UCbLAnN1wjll339Sg16gCtlpWmfwitC1njJSn8cED7IbACQ")
-	auth.set_access_token("556463747-o4O8x8ZxxxbLsyoX7M9p9HZfjBOfWnLiNEtRYNZn","qT2ZfL573eoB8MBegrVrkyjaH4K6WddjKPk8cfo64arTw")
+	auth = tweepy.OAuthHandler() #keys in here
+	auth.set_access_token() #keys in here
 	auth_api = tweepy.API(auth)
 	
 	# test authentication

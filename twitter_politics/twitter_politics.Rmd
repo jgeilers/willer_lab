@@ -20,10 +20,10 @@ source("../twitter_ideology/pkg/tweetscores/R/get-users-batch.R")
 requestURL <- "https://api.twitter.com/oauth/request_token"
 accessURL <- "https://api.twitter.com/oauth/access_token"
 authURL <- "https://api.twitter.com/oauth/authorize"
-# consumerKey <- "ykhXYXaehvutBn9KrDJl8yoUy"
-# consumerSecret <- "h07UCbLAnN1wjll339Sg16gCtlpWmfwitC1njJSn8cED7IbACQ"
-consumerKey <- "G5zpdJOs93oDc896Yx2OUnUto"
-consumerSecret <- "4XA9v2GaMv1mgguO8UsPnqnoYX8Re255LLmCeRNwXay7blQ49g"
+# consumerKey <- "key here"
+# consumerSecret <- "key here"
+consumerKey <- "key here"
+consumerSecret <- "key here"
 my_oauth <- OAuthFactory$new(consumerKey=consumerKey, consumerSecret=consumerSecret,
     requestURL=requestURL, accessURL=accessURL, authURL=authURL)
 ```

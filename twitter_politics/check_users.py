@@ -6,8 +6,8 @@ from requests_oauthlib import OAuth1Session
 # PART 1, GATHER THE DATA
 # UN-COMMENT PART 2 ONCE YOU ARE DONE WITH THIS
 
-consumer_key = "reLrKn1v3v98RzdBuUPKPtvZu"
-consumer_secret = "UYsao9OgcnLSsxnMO6PmKA8UzoSlSJ3dPiTcCGh5MCSjyEGLBA"
+consumer_key = "key"
+consumer_secret = "key
 
 usernames = []
 influ = pd.read_csv("twitter_influencers.csv")
